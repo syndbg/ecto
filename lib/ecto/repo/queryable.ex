@@ -44,6 +44,19 @@ defmodule Ecto.Repo.Queryable do
     stream(:all, repo, adapter, query, opts)
   end
 
+  def last(repo, adapter, queryable, _) do
+    query  = Queryable.to_query(queryable)
+    schema = assert_schema!(query)
+    case schema.__schema__(:primary_key) do
+      [pk] ->
+        Query.from(q in query, order_by: [desc: pk], limit: 1)
+      pks ->
+        raise ArgumentError,
+          "#{inspect repo}.get/2 requires the schema #{inspect schema} " <>
+          "to have exactly one primary key, got: #{inspect pks}"
+    end
+  end
+
   def get(repo, adapter, queryable, id, opts) do
     one(repo, adapter, query_for_get(repo, queryable, id), opts)
   end
